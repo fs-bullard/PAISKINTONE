@@ -54,9 +54,11 @@ def main():
         )
 
     for data_file in data_files:
-        print("Processing", data_file)
         data = PAData.from_hdf5(data_file, "r+")
-
+        if data.get_scan_unmixed():
+            # Skip if already run.
+            continue
+        print("Processing", data_file)
         if np.any(data.get_wavelengths() == 0.0):
             print("Strange, some wavelengths = 0 - investigate.", data_file)
             continue

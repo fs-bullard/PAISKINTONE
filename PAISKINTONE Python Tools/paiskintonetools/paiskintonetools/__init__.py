@@ -36,7 +36,7 @@ def file_sort_key(x):
     return int(x.stem.split("_")[1])
 
 
-def get_example_scan_of_type(folder, desired_type):
+def get_example_scan_of_type(folder, desired_type, exclude="parallel"):
     import patato as pat
     from patato.io.hdf.hdf5_interface import HDF5Reader
     from pathlib import Path
@@ -45,5 +45,5 @@ def get_example_scan_of_type(folder, desired_type):
     for f in sorted(list(Path(folder).glob("*.hdf5")), key=file_sort_key):
         with h5py.File(f) as h5f:
             pa = pat.PAData(HDF5Reader(h5f))
-            if desired_type in pa.get_scan_name():
+            if desired_type in pa.get_scan_name() and exclude not in pa.get_scan_name():
                 return f
