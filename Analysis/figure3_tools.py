@@ -3,26 +3,15 @@
 
 import pandas as pd
 import numpy as np
-from scipy.interpolate import interpn, interp1d
-from scipy.stats import ttest_1samp
-from scipy.ndimage import median_filter
 
-from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from matplotlib.patches import Arc, Rectangle
 from matplotlib.lines import Line2D
-from matplotlib.transforms import ScaledTranslation, blended_transform_factory
-import seaborn as sns
-import scienceplots
 
-import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
-import patato as pat
 
-from paiskintonetools import setup_matplotlib
-from paiskintonetools.stats import loess_bootstrap, LinearRegDiagnostic
+from paiskintonetools.stats import loess_bootstrap
 
 
 def p_formater(p):
@@ -38,8 +27,11 @@ def agg_function(x):
     )
 
 
+def mua_melanin(x, mvf):
+    return 519 * (x / 500) ** (-3.5) * mvf / 10  # /mm
+
+
 def make_figure_6_plot(ax, ax_cf, axso2, colours):
-    mua_melanin = lambda x, mvf: 519 * (x / 500) ** (-3.5) * mvf / 10  # /mm
     df = pd.read_csv("../Fluence Correction/cali_curve.csv", index_col=0)
     df.set_index(["MVF", "WL"], inplace=True, drop=False)
 
@@ -90,7 +82,7 @@ def make_figure_6_plot(ax, ax_cf, axso2, colours):
 
     i = 0
     for n, g in df.groupby(level=0):
-        l = ax_cf.plot(
+        plot_line = ax_cf.plot(
             np.linspace(700, 900, 5), g["Normalised"], color=scm.to_rgba(n * 100)
         )
         ax_cf.plot(
@@ -101,15 +93,19 @@ def make_figure_6_plot(ax, ax_cf, axso2, colours):
         )
         i += 1
 
-    l0 = Line2D([0], [0], linewidth=l[0].get_linewidth(), color="k")
-    l1 = Line2D([0], [0], linewidth=l[0].get_linewidth(), color="k", linestyle="--")
+    l0 = Line2D([0], [0], linewidth=plot_line[0].get_linewidth(), color="k")
+    l1 = Line2D(
+        [0], [0], linewidth=plot_line[0].get_linewidth(), color="k", linestyle="--"
+    )
     ax_cf.legend([l0, l1], ["Monte-Carlo", "Beer-Lambert"], fontsize="small")
 
     cbar = plt.colorbar(scm, ax=ax_cf, aspect=15)
     cbar.set_label(
         "Melanosome volume\nfraction (%)", fontsize="small", fontweight="normal"
     )
-    cbar.ax.set_yticks(100 * all_mvfs, [f"{100*x:.1f}" for i, x in enumerate(all_mvfs)])
+    cbar.ax.set_yticks(
+        100 * all_mvfs, [f"{100 * x:.1f}" for i, x in enumerate(all_mvfs)]
+    )
     cbar.ax.yaxis.set_minor_locator(mpl.ticker.NullLocator())
     cbar.ax.set_ylim([mvf_min, mvf_max])
     # f = mpl.ticker.ScalarFormatter()
@@ -163,7 +159,7 @@ def make_figure_6_plot(ax, ax_cf, axso2, colours):
         X, Y, Ymax, Ymin = loess_bootstrap(
             df_toplot["ITA"], df_toplot[y_plot], frac=0.6666, it=1, seed=1
         )
-        l = axso2.plot(X, Y * 100, label="Uncorrected", c=col)
+        plot_line = axso2.plot(X, Y * 100, label="Uncorrected", c=col)
         axso2.axhline(Y[-1] * 100, c="gray", linewidth=1)
         # axso2.fill_between(X, Ymin, Ymax, alpha=0.3, facecolor=l[0].get_color())
 
@@ -175,9 +171,9 @@ def make_figure_6_plot(ax, ax_cf, axso2, colours):
             it=1,
             seed=1,
         )
-        l = axso2.plot(X, Y * 100, label="Corrected", c=col, linestyle="--")
+        plot_line = axso2.plot(X, Y * 100, label="Corrected", c=col, linestyle="--")
         axso2.fill_between(
-            X, Ymin * 100, Ymax * 100, alpha=0.3, facecolor=l[0].get_color()
+            X, Ymin * 100, Ymax * 100, alpha=0.3, facecolor=plot_line[0].get_color()
         )
     axso2.invert_xaxis()
 
@@ -193,8 +189,8 @@ def make_figure_6_plot(ax, ax_cf, axso2, colours):
         for handle in handles[:2]
     ]
     labels = labels[:2]
-    l0 = Line2D([0], [0], linewidth=l[0].get_linewidth(), color=colours[0])
-    l1 = Line2D([0], [0], linewidth=l[0].get_linewidth(), color=colours[1])
+    l0 = Line2D([0], [0], linewidth=plot_line[0].get_linewidth(), color=colours[0])
+    l1 = Line2D([0], [0], linewidth=plot_line[0].get_linewidth(), color=colours[1])
     handles += [l0, l1]
     labels += ["Radial artery", "Bicep muscle"]
     axso2.legend(handles, labels, fontsize="small")

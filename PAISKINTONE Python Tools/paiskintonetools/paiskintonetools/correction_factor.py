@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
-from pathlib import Path
-
 
 def get_correction_factor_interpolator(cal_curve_file):
     # Load in my fluence calibration curve

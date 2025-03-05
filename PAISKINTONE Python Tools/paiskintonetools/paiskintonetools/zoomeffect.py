@@ -1,6 +1,4 @@
-import matplotlib.pyplot as plt
-
-from matplotlib.transforms import Bbox, TransformedBbox, blended_transform_factory
+from matplotlib.transforms import TransformedBbox, blended_transform_factory
 from mpl_toolkits.axes_grid1.inset_locator import (
     BboxConnector,
     BboxConnectorPatch,
@@ -25,7 +23,7 @@ def connect_bbox(
         loc2=loc2a,
         clip_on=False,
         in_layout=False,
-        **prop_lines
+        **prop_lines,
     )
     c2 = BboxConnector(
         bbox1,
@@ -34,7 +32,7 @@ def connect_bbox(
         loc2=loc2b,
         clip_on=False,
         in_layout=False,
-        **prop_lines
+        **prop_lines,
     )
 
     bbox_patch1 = BboxPatch(bbox1, **prop_patches)
@@ -48,7 +46,7 @@ def connect_bbox(
         loc1b=loc1b,
         loc2b=loc2b,
         clip_on=False,
-        **prop_patches
+        **prop_patches,
     )
 
     return c1, c2, bbox_patch1, bbox_patch2, p

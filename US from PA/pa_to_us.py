@@ -57,18 +57,14 @@ if __name__ == "__main__":
     dx = 0.04 / 399
 
     data_folder = Path("../Data")
-    output_folder = Path(
-        "../US from PA"
-    )
+    output_folder = Path("../US from PA")
 
     # Set up reconstruction class
     fft_rec = FFTReconstruction(field_of_view=(0.04, 0, 0.04), n_pixels=(400, 1, 400))
     fft_rec.hankels = None
 
     # Get model matrix
-    m = load_npz(
-        "../Scripts/forward_model.npz"
-    )
+    m = load_npz("../Scripts/forward_model.npz")
 
     files_to_process = list(data_folder.glob("**/*.hdf5"))
 

@@ -1,24 +1,27 @@
-import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
 import patato as pat
 from patato.io.msot_data import HDF5Tags
 from patato.io.attribute_tags import ReconAttributeTags
 
-import matplotlib.transforms as transforms
 from pathlib import Path
 
 import cupy as cp
 
 from scipy.signal import butter, filtfilt
-from scipy.interpolate import interpn
 from cupyx.scipy.sparse import csr_matrix
 
 from pylops.optimization.basic import lsqr
 from pylops import MatrixMult
 
 forward_matrix = np.load("forward_model.npz")
-forward_matrix = csr_matrix((cp.array(forward_matrix["data"]), cp.array(forward_matrix["indices"]), cp.array(forward_matrix["indptr"])), shape=tuple(forward_matrix["shape"]))
+forward_matrix = csr_matrix(
+    (
+        cp.array(forward_matrix["data"]),
+        cp.array(forward_matrix["indices"]),
+        cp.array(forward_matrix["indptr"]),
+    ),
+    shape=tuple(forward_matrix["shape"]),
+)
 forward_matrix = MatrixMult(forward_matrix.astype(float))
 
 
@@ -31,33 +34,43 @@ def solve(ts):
     fp = cp.array(filtfilt(b, a, ts, axis=-1, padtype="even", padlen=100, method="pad"))
     return lsqr(forward_matrix, fp.flatten(), damp=3e2)[0].get()
 
+
 def reconstruct(ts):
     rd = ts.raw_data.astype(float)
     orig_shape = rd.shape
-    rd = rd.reshape((-1, ) + orig_shape[-2:])
+    rd = rd.reshape((-1,) + orig_shape[-2:])
     results = []
     for i in range(rd.shape[0]):
         results.append(solve(rd[i]).reshape((400, 400)))
     return np.stack(results).reshape(orig_shape[:2] + (400, 1, 400))
 
+
 def nonneg_mean(x, axis=None):
     y = np.copy(x)
-    y[y<0] = np.nan
+    y[y < 0] = np.nan
     return np.nanmean(y, axis=axis)
+
 
 def nonneg_median(x, axis=None):
     y = np.copy(x)
-    y[y<0] = np.nan
+    y[y < 0] = np.nan
     return np.nanmedian(y, axis=axis)
+
 
 def nonneg_max(x, axis=None):
     y = np.copy(x)
-    y[y<0] = np.nan
+    y[y < 0] = np.nan
     return np.nanmax(y, axis=axis)
+
 
 def pat_reconstruct(ts):
     rec_raw = reconstruct(ts)
-    rec = pat.Reconstruction(rec_raw, ts.ax_1_labels, hdf5_sub_name="Model Based", field_of_view=(0.04, 0., 0.04))
+    rec = pat.Reconstruction(
+        rec_raw,
+        ts.ax_1_labels,
+        hdf5_sub_name="Model Based",
+        field_of_view=(0.04, 0.0, 0.04),
+    )
     rec.attributes[HDF5Tags.SPEED_OF_SOUND] = 1520
     rec.attributes[ReconAttributeTags.RECONSTRUCTION_ALGORITHM] = "Model Based"
     rec.attributes[ReconAttributeTags.X_NUMBER_OF_PIXELS] = 400
@@ -69,8 +82,11 @@ def pat_reconstruct(ts):
     rec.attributes[HDF5Tags.WAVELENGTH] = ts.ax_1_labels
     rec.attributes["Damp"] = 3e2
     rec.attributes["Bandpass"] = [5e3, 7e6]
-    rec.attributes["BandpassDetails"] = "Scipy Butter Bandpass, 5kHz to 7MHz. Padtype even, padlen 100."
+    rec.attributes["BandpassDetails"] = (
+        "Scipy Butter Bandpass, 5kHz to 7MHz. Padtype even, padlen 100."
+    )
     return rec
+
 
 for e in images:
     print(e)

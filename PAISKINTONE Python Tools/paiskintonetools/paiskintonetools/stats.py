@@ -4,7 +4,6 @@ import seaborn as sns
 from statsmodels.tools.tools import maybe_unwrap_results
 from statsmodels.graphics.gofplots import ProbPlot
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-import statsmodels
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from typing import Type
@@ -174,7 +173,7 @@ class LinearRegDiagnostic:
             fig, ax = plt.subplots()
 
         QQ = ProbPlot(self.residual_norm)
-        fig = QQ.qqplot(line="45", alpha=0.5, lw=1, ax=ax)
+        _ = QQ.qqplot(line="45", alpha=0.5, lw=1, ax=ax)
 
         # annotations
         abs_norm_resid = np.flip(np.argsort(np.abs(self.residual_norm)), 0)
@@ -312,7 +311,10 @@ class LinearRegDiagnostic:
         Helper function for plotting Cook's distance curves
         """
         p = self.nparams
-        formula = lambda x: np.sqrt((factor * p * (1 - x)) / x)
+
+        def formula(x):
+            return np.sqrt((factor * p * (1 - x)) / x)
+
         x = np.linspace(0.001, max(self.leverage), 50)
         y = formula(x)
         return x, y
@@ -327,7 +329,7 @@ class LinearRegDiagnostic:
         for resid_index in top_residual_indices:
             y = self.residual_norm[resid_index]
             is_negative = y < 0
-            if previous_is_negative == None or previous_is_negative == is_negative:
+            if previous_is_negative is None or previous_is_negative == is_negative:
                 offset += 1
             else:
                 quant_index -= offset
@@ -356,7 +358,7 @@ def loess_bootstrap(x, y, frac=0.75, n_bootstrap=500, seed=None, it=3):
     all_points = sm.nonparametric.lowess(
         exog=x, endog=y, frac=frac, xvals=x_eval, it=it
     )
-    grad0 = calculated[:, -2] - calculated[:, -1]
+    # grad0 = calculated[:, -2] - calculated[:, -1]
     # print(np.mean(grad0 > 0))
     return (
         x_eval,
