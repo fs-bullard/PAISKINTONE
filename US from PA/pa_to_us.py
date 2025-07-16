@@ -64,20 +64,25 @@ if __name__ == "__main__":
     fft_rec.hankels = None
 
     # Get model matrix
-    m = load_npz("../Scripts/forward_model.npz")
+    m = load_npz("Scripts/forward_model.npz")
 
-    files_to_process = list(data_folder.glob("**/*.hdf5"))
+    # files_to_process = list(data_folder.glob("**/*.hdf5"))
+    files_to_process = ['Data/23_5.hdf5']
+    print(files_to_process)
 
     for pa_file in tqdm(files_to_process, desc="Scan loop"):
         pa = pat.PAData.from_hdf5(pa_file)
         name = pa.get_scan_name()
         if "3" in name or "2" in name:
             continue
-        scan_id = pa_file.stem
-        skin_id = pa_file.parent.stem
+        # scan_id = pa_file.stem
+        # skin_id = pa_file.parent.stem
+        scan_id = '23_5'
+        skin_id = '23'
 
-        output_folder_id = output_folder / skin_id
-        output_folder_id.mkdir(parents=True, exist_ok=True)
+        # output_folder_id = output_folder / skin_id
+        # output_folder_id.mkdir(parents=True, exist_ok=True)
+        output_folder_id = 'practice/output'
 
         if ("skin_", "0") not in pa.get_rois():
             print(f"Skipping {skin_id}, {scan_id}, {name}.")
@@ -145,11 +150,11 @@ if __name__ == "__main__":
             fig.suptitle(f"{skin_id} {scan_id} {name}")
             fig.tight_layout()
             fig.savefig(
-                output_folder_id / (str.zfill(str(i), 2) + "_" + scan_id + "_plot"),
+                output_folder_id +  '/' + (str.zfill(str(i), 2) + "_" + scan_id + "_plot"),
                 dpi=300,
             )
             plt.close()
         output_images = np.stack(us_images_filtered)
         output_us = np.stack(us_images)
-        np.save(output_folder_id / (scan_id + "_images"), output_images)
-        np.save(output_folder_id / (scan_id + "_raw_us"), output_us)
+        np.save(output_folder_id + '/' + (scan_id + "_images"), output_images)
+        np.save(output_folder_id + '/' + (scan_id + "_raw_us"), output_us)
