@@ -1,14 +1,24 @@
+'''
+
+data = [
+    ['SKIN23', 50.89, 5],
+    ['SKIN11', 19.11, 5],
+    ['SKIN42', -16.86, 4],
+    ['SKIN19', -63.55, 5]
+]
+'''
+
 import patato as pat
 import matplotlib.pyplot as plt
 import numpy as np
 
-padata = pat.PAData.from_hdf5("Data/23_5.hdf5")[:, :-1]
+padata = pat.PAData.from_hdf5("Data/19_5.hdf5")[:, :-1]
 
 image_data = np.squeeze(
     padata.get_scan_reconstructions()["Model Based", "0"].raw_data
 )
 
-image_data = np.load('Projection/simulations/simulated_data.npy')
+# image_data = np.load('Projection/simulations/simulated_data.npy')
 
 
 wavelengths = padata.get_wavelengths()
@@ -29,21 +39,24 @@ melanin_norm = melanin / np.linalg.norm(melanin)
 # Compute cosine similarity
 cos_sim = np.clip(np.dot(melanin_norm, image_unit).reshape(x, y), 0, 1)
 
-
-# coeffs = np.dot(melanin, image_flat) / np.linalg.norm(melanin)**2
-projection_flat = np.outer(melanin, cos_sim)
+coeffs = np.dot(melanin, image_flat) / np.linalg.norm(melanin)**2
+projection_flat = np.outer(melanin, coeffs)
 
 projection = projection_flat.reshape(n, x, y)
-# coeffs_img = coeffs.reshape(x, y)
+
+# Threshold the projection by cos_sim
+thresh = 0.95
+mask = cos_sim > thresh
+projection_masked = projection * mask
 
 # Calculate subtraction (in theory, PAI without mUS clutter)
-pai = np.clip(image_data - projection, 0, None)
+pai = np.clip(image_data - projection_masked, 0, None)
 
-fig, ax = plt.subplots(3, 3, figsize=(12, 12))
+fig, ax = plt.subplots(3, 3, figsize=(12, 8))
 
 # Compute common colour scale for whole figure
-vmin = min(image_data[:].min(), projection[:].min(), pai[:].min())
-vmax = max(image_data[:].max(), projection[:].max(), pai[:].max())
+vmin = 0
+vmax = max(image_data[:].max(), projection_masked[:].max(), pai[:].max())
 
 j = 0
 for i in range(n):
@@ -53,7 +66,7 @@ for i in range(n):
         ax[j, 0].set_title(f"Initial Reconstruction {int(wavelengths[i])} nm")
 
         # Plot mUS only
-        im1 = ax[j, 1].imshow(projection[i], cmap='viridis', vmin=vmin, vmax=vmax)
+        im1 = ax[j, 1].imshow(projection_masked[i], cmap='viridis', vmin=vmin, vmax=vmax)
         ax[j, 1].set_title(f"mUS only {int(wavelengths[i])} nm")
 
         # Plot PAI only
